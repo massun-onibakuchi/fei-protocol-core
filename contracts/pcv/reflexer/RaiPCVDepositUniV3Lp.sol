@@ -20,6 +20,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 /// @title Implementation for Rai PCV Deposit that provides liquidity to UniswapV3
 /// @author massun-onibakuchi
+/// @notice This conotract issues RAI and earns fees by depositing RAI and FEI into the UniswapV3 pool.
 contract RaiPCVDepositUniV3Lp is PCVDeposit, RaiRef, UniV3Ref {
     using Decimal for Decimal.D256;
 
@@ -105,6 +106,7 @@ contract RaiPCVDepositUniV3Lp is PCVDeposit, RaiRef, UniV3Ref {
         _approveToken(_systemCoin, coinJoin_);
     }
 
+    /// @notice Receive ETH from WETH, PCV or UniswapV3 router
     receive() external payable {}
 
     /// @notice deposit ETH into the PCV allocation
@@ -163,6 +165,7 @@ contract RaiPCVDepositUniV3Lp is PCVDeposit, RaiRef, UniV3Ref {
                 );
                 GeneralUnderlyingMaxUniswapV3SafeSaviourLike(_safeSaviour).deposit(_safeId, _tokenId);
             } else if (owner == _safeSaviour) {
+                // Increase liquidity 
                 _increaseLiquidity(_tokenId, debtToGenerate, feiAmount);
             }
 
@@ -179,6 +182,7 @@ contract RaiPCVDepositUniV3Lp is PCVDeposit, RaiRef, UniV3Ref {
     ///         simply withdraw collateral ETH from SAFE. Otherwise repay some RAI to satisfy the target collateralization ratio in the following way.
     ///             - Remove SAFE protection and remove all RAI/FEI liquidity
     ///             - Swap PCV assets specified by governor for RAI
+    ///         If the contract can not get the RAI it needs to repay, reverts.
     /// @param to the address to send PCV to
     /// @param amount of ETH withdrawn
     function withdraw(address to, uint256 amount) external override onlyPCVController whenNotPaused {
@@ -243,8 +247,11 @@ contract RaiPCVDepositUniV3Lp is PCVDeposit, RaiRef, UniV3Ref {
             }
         }
 
+        // Repay debt and withdraw WETH
         _freeETHAndRepayDebt(safeId, amount, debtRepaid);
+        // Unrwap WETH to ETH
         _unwrap(amount);
+        // Burn fei held
         _burnFeiHeld();
 
         // Transfer ETH to destination.
@@ -310,6 +317,7 @@ contract RaiPCVDepositUniV3Lp is PCVDeposit, RaiRef, UniV3Ref {
 
         emit PositionTicksUpdate(oldTickLower, oldTickUpper, _tickLower, _tickUpper);
 
+        // Withdraw UniV3 NFT position from Saviour and remove the liquidity.
         uint256 _tokenId = tokenId;
         if (_tokenId != 0 && positionManager.ownerOf(_tokenId) == _safeSaviour) {
             tokenId = 0;

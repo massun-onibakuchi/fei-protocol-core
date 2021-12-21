@@ -114,12 +114,6 @@ abstract contract SAFEEngineLike {
     ) external virtual;
 }
 
-contract SAFEHandler {
-    constructor(address safeEngine) {
-        SAFEEngineLike(safeEngine).approveSAFEModification(msg.sender);
-    }
-}
-
 interface IGebSafeManager {
     // SAFEId => SAFEHandler
     function safes(uint256 safeId) external view returns (address safeHandler);

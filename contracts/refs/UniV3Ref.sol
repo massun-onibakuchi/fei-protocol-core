@@ -5,11 +5,10 @@ import "./OracleRef.sol";
 import "./IUniV3Ref.sol";
 
 /// @title A Reference to Uniswap
-/// @author Fei Protocol
+/// @author massun-onibakuchi
 /// @notice defines some utilities around interacting with Uniswap
 /// @dev the uniswap position manager should be FEI and another asset
 abstract contract UniV3Ref is IUniV3Ref, OracleRef {
-
     /// @notice the referenced Uniswap position manager
     INonfungiblePositionManager public override positionManager;
 
@@ -33,11 +32,11 @@ abstract contract UniV3Ref is IUniV3Ref, OracleRef {
         _setDecimalsNormalizerFromToken(_token);
     }
 
-    // /// @notice set the new position manager contract
-    // /// @param newPositionManager the new position manager
-    // function setPositionManager(address newPositionManager) external virtual override onlyGovernor {
-    //     _setupPositionManager(newPositionManager);
-    // }
+    /// @notice set the new position manager contract
+    /// @param newPositionManager the new position manager
+    function setPositionManager(address newPositionManager) external virtual onlyGovernor {
+        _setupPositionManager(newPositionManager);
+    }
 
     function _setupPositionManager(address newPositionManager) internal {
         require(newPositionManager != address(0), "UniV3Ref: zero address");
